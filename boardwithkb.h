@@ -15,5 +15,6 @@ void generateBoard(double * ships, int N, int n) ;
 int posIsValidK(int pos, int l_size, int dir, int orient, int N, int * used, int * k) ;
 void generateBoardWithK(double * shipProbK, int N, int n, int * k) ;
 void generateIncompleteBoard(int * k, int N);
-
+void genPlayerBoard(double * board, int N);
+int sum_board(double * board, int N);
 #endif

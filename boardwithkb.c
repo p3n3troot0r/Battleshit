@@ -49,6 +49,15 @@ int *allocate_int_vector (int n) {
   return x;
 }
 
+int sum_board(double * board, int N) {
+	int sum = 0;
+	int i;
+	for(i = 0; i < N*N; i++) {
+		sum += (board[i] == 1) ? 1 : 0;
+	}
+	return sum;
+}
+
 /* randomly shuffle array of size n */
 /* implements the fisher-yates shuffle */
 void shuffleArr(int * arr, int n) {
@@ -78,6 +87,8 @@ int posIsValid(int pos, int l_size, int dir, int orient, int N, int * used) {
  *				int n = # boards to generate
  */
 void generateBoard(double * ships, int N, int n) {
+	
+	printf("generating %d boards\n",n);
 	int * sizes = allocate_int_vector(5);
 	sizes[0] = 2; sizes[1] = 3; sizes[2] = 3;	sizes[3] = 4; sizes[4] = 5; 
 	
@@ -86,7 +97,7 @@ void generateBoard(double * ships, int N, int n) {
 	int i, z, y, w, sq, dir, orient, l_size, pos, u,yy;
 	int valid;
 	double avgfactor = (1.0/n);
-  	srand(time(NULL));
+  srand(time(NULL));
 
 		for(i = 0; i < n; i++) {			
 		/* place 5 ships */
@@ -105,7 +116,7 @@ void generateBoard(double * ships, int N, int n) {
 				
 				valid = posIsValid(pos, l_size, dir, orient, N, used);
 			} /* should be valid now */
-			printf("BOARD i=%d size = %d orient = %d dir = %d pos = %d \n\n",i,l_size,orient,dir,pos);
+			//printf("BOARD i=%d size = %d orient = %d dir = %d pos = %d \n\n",i,l_size,orient,dir,pos);
 
 			for(w = 0; w < l_size; w++) { 
 				sq = (orient == 10) ? (pos + (N*-1*dir*w)) :  (pos + (dir*w));
@@ -113,10 +124,10 @@ void generateBoard(double * ships, int N, int n) {
 				ships[(l_size-2)+(sq*4)] += ( (l_size == 3) ? avgfactor*(1.0/2.0) : avgfactor ); 
 			}
 		}
-		for(yy = 0; yy < N*N; yy++) {
+		/*for(yy = 0; yy < N*N; yy++) {
 			if(yy % 10 == 0) printf("\n");
 			printf(" %d ", used[yy]);
-		} printf("\n");
+		} printf("\n");*/
 		memset(used,0,N*N*sizeof(int));
 	}
 	free(used);
@@ -226,18 +237,18 @@ void generateBoardWithK(double * shipProbK, int N, int n, int * k) {
 				if(hts && valid) { hts--; }
 			} /* should be valid now */
 
-			printf("K-Board i=%d size = %d orient = %d dir = %d pos = %d \n\n",i,l_size,orient,dir,pos);
+			//printf("K-Board i=%d size = %d orient = %d dir = %d pos = %d \n\n",i,l_size,orient,dir,pos);
 			for(w = 0; w < l_size; w++) { 
 				sq = (orient == 10) ? (pos + (N*-1*dir*w)) :  (pos + (dir*w));
 				used[sq] = 1;
 				shipProbK[(l_size-2)+(sq*4)] += ( (l_size == 3) ? avgfactor*(1.0/2.0) : avgfactor ); 
 			}
 		}
-		
+		/*
 		for(yy = 0; yy < N*N; yy++) {
 			if(yy % 10 == 0) printf("\n");
 			printf(" %d ", used[yy]);
-		} printf("\n");
+		} printf("\n");*/
 		memset(used,0,N*N*sizeof(int));
 		
 	}
@@ -271,4 +282,52 @@ void generateIncompleteBoard(int * k, int N) {
 		pos = rand() % (N*N);
 		k[pos] = 1;
 	}
+}
+
+void genPlayerBoard(double * board, int N) {
+	
+	int * sizes = allocate_int_vector(5);
+	sizes[0] = 2; sizes[1] = 3; sizes[2] = 3;	sizes[3] = 4; sizes[4] = 5; 
+	
+	int * used;
+	used = allocate_int_vector(N*N);
+	int i, z, y, w, sq, dir, orient, l_size, pos, u,yy;
+	int valid;
+  srand(time(NULL));
+
+	
+	  /* place 5 ships */
+		shuffleArr(sizes, 5); 
+		for(z = 0; z < 5; z++) {
+			valid = 0;
+			/* select size */
+			l_size = sizes[z];
+			/* ==> take random direction */
+			dir = pow(-1, rand());
+			orient = (rand() % 2) ? 1 : 10 ; /* 1 csp to left/right, 10 to up/down */
+			/* select position on board */
+			/* string together ternary operator for bounds checking */
+			while(!valid) {
+					pos = (orient==1)  ? ((dir>0) ? (rand() % (N-l_size+1))*(rand() % N)  : (((l_size-1)+(rand() % (N-l_size+1)))*(rand() % N))) : ((dir>0) ? ((N*(l_size-1)) + (rand() % ((N*N)-(N*(l_size-1))))) : (rand() % (N*N-(N*l_size-1)))); 
+				
+				valid = posIsValid(pos, l_size, dir, orient, N, used);
+			} 
+			
+			/* debugging - should be valid now */
+			printf("BOARD i=%d size = %d orient = %d dir = %d pos = %d \n\n",i,l_size,orient,dir,pos);
+
+		}
+		
+		/* FOR DEBUGGING: PRINT BOARD */
+		for(yy = 0; yy < N*N; yy++) {
+			if(yy % 10 == 0) printf("\n");
+			printf(" %d ", used[yy]);
+		} printf("\n");
+	
+	free(used);
+	free(sizes);
+	
+	
+	
+	
 }
