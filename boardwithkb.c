@@ -93,7 +93,7 @@ int posIsValid(int pos, int l_size, int dir, int orient, int N, int * k) {
  * 				int N = dimension of the board (default 10)
  *				int n = # boards to generate
  */
-void generateBoard(double * ships, int N, int n) {
+void generateBoard(double * ships, int N, int n, int np) {
 	
 	printf("generating %d boards\n",n);
 	int * sizes = allocate_int_vector(5);
@@ -103,7 +103,7 @@ void generateBoard(double * ships, int N, int n) {
 	used = allocate_int_vector(N*N);
 	int i, z, y, w, sq, dir, orient, l_size, pos, u,yy;
 	int valid;
-	double avgfactor = (1.0/n);
+	double avgfactor = (1.0/(n*np));
   srand(time(NULL));
 
 	for(i = 0; i < n; i++) {			
@@ -167,7 +167,7 @@ int posIsValidK(int pos, int l_size, int dir, int orient, int N, int * used, int
  * 				int[] k = information known about the board
  *   k[i] = {-1:unknown, 0:miss, 1:hit, 2-5 ships}
  */
-void generateBoardWithK(double * shipProbK, int N, int n, int * k) {
+void generateBoardWithK(double * shipProbK, int N, int n, int * k, int np) {
 
 	int * used;
 	used = allocate_int_vector(N*N);
@@ -177,7 +177,7 @@ void generateBoardWithK(double * shipProbK, int N, int n, int * k) {
 	int MAX_SHIP = 5;
 	int shps = 5;
 	int valid;
-	double avgfactor = (1.0/n);
+	double avgfactor = (1.0/(n*np));
   	srand(time(NULL));
 
 
@@ -291,15 +291,15 @@ void generateIncompleteBoard(int * k, int N) {
 	}
 }
 
-void genPlayerBoard(int * board, int N) {
+void genPlayerBoard(int * board, int N, int * ships) {
 	
 	int * sizes = allocate_int_vector(5);
 	sizes[0] = 2; sizes[1] = 3; sizes[2] = 3;	sizes[3] = 4; sizes[4] = 5; 
 	
-	int i, z, y, w, sq, dir, orient, l_size, pos, u,yy;
+	int i, z, y, w, sq, dir, orient, l_size, pos, u,yy,qq;
 	int valid;
   srand(time(NULL));
-	  
+	int cur = 0;
 	/* place 5 ships */
 	shuffleArr(sizes, 5); 
 	for(z = 0; z < 5; z++) {
@@ -323,13 +323,18 @@ void genPlayerBoard(int * board, int N) {
 		for(w = 0; w < l_size; w++) { 
 			sq = (orient == 10) ? (pos + (N*-1*dir*w)) :  (pos + (dir*w));
 			board[sq] = l_size;
+			ships[cur + w] = sq;
+			//printf("ship at %d really %d \n", ships[cur + w], sq);
 		}
+		cur += l_size;
+		
 	}
 		
 		/* FOR DEBUGGING: PRINT BOARD */
 		for(yy = 0; yy < N*N; yy++) {
 			if(yy % 10 == 0) printf("\n");
 			printf(" %d ", board[yy]);
+			
 		} printf("\n");
 	
 	free(sizes);
