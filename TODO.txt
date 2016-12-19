@@ -1,0 +1,12 @@
+# 1: Recreate battleship interface
+## - Main program - initiate game
+## - Player (human)
+## - Computer difficulty medium, hard
+## - Ships 
+## - Board
+
+# 2: Write utilitiy functions - board generation, evaluation, with and without info 
+#    in an MPI-compatible way. 
+
+# 3: Recreate gameplay, let AI crank the functions every turn 
+# Note: only have game play on process 0 (input/output)
