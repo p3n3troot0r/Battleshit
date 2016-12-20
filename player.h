@@ -24,4 +24,6 @@ void markBoard(int * b1, int * b2); /* mark b1 with b2 */
 int doMove(int * b1, int diff, int np); /* do move based on environment */ 
 int getBestMove(int * b, double * prob, int N);
 int getBestDual(int * b, double * raw, double * cond, int N);
+void makeoneD(double * a, double * b);
+
 #endif

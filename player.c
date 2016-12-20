@@ -6,6 +6,17 @@ void markBoard(int * b1, int * b2) { /* mark b1 with b2 */
 
 }
 
+void makeoneD(double * a, double * b) {
+	int l1 = 10*10*4;
+	int l2 = 10*10;
+	
+	int i;
+	for(i = 0; i < l1; i += 4) {
+		b[(i/4)] += (a[i] + a[i+1] + a[i+2] + a[i+3])/4.0;
+	}
+}
+
+// prb is 400 long - sum all the rows
 int getBestMove(int * b, double * prob, int N) {
 	int i;
 	int m = 0;
@@ -36,10 +47,6 @@ int getBestDual(int * b, double * raw, double * cond, int N) {
 	return m;
 }
 
-
-
-
-
 int doMove(int * b1, int diff, int np) { /* do move based on environment */ 
 
 	
@@ -55,7 +62,6 @@ int doMove(int * b1, int diff, int np) { /* do move based on environment */
 	double * glob_praw;
 	double * glob_pcond;
 	
-#ifdef PARALLEL
 	glob_praw = allocate_double_vector(N*N*nships);
 	MPI_Reduce(raw_prob, glob_praw, (N*N*nships), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	
@@ -63,7 +69,6 @@ int doMove(int * b1, int diff, int np) { /* do move based on environment */
 	
 	memset(glob_praw, 0, N*N*nships*sizeof(double));
 	memset(glob_pcond, 0, N*N*nships*sizeof(double));
-#endif
 	
 	/* different moves for different difficulties */
 	double * cond_prob;
@@ -72,11 +77,8 @@ int doMove(int * b1, int diff, int np) { /* do move based on environment */
 	if(diff == 0) {
 		/* pick spot (NOT TRIED YET) with highest probability of being occupied 
 		 * based off raw */
-#ifdef PARALLEL
 		move = getBestMove(b1, glob_praw, N);
-#else
-		move = getBestMove(b1, raw_prob, N);
-#endif
+	//	move = getBestMove(b1, raw_prob, N);
 	}
 	else if(diff == 1) {
 		/* pick spot (NOT TRIED YET) with highest probability of being occupied
@@ -84,14 +86,14 @@ int doMove(int * b1, int diff, int np) { /* do move based on environment */
 		cond_prob = allocate_double_vector(N*N*nships);
 		
 		generateBoardWithK(cond_prob, N, n, b1, np);
-#ifdef PARALLEL
+		//#ifdef PARALLEL
 		MPI_Reduce(cond_prob, glob_pcond, (N*N*nships), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		move = getBestDual(b1, glob_praw, glob_pcond, N);	
 		free(glob_praw);
 		free(glob_pcond);
-#else
-		move = getBestDual(b1, raw_prob, cond_prob, N);	
-#endif
+		//#else
+	//	move = getBestDual(b1, raw_prob, cond_prob, N);	
+		//#endif
 		
 		free(cond_prob);
 	}

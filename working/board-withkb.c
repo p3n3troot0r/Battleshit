@@ -13,7 +13,12 @@
  *				* Convert to parallel code for maya
  */
 
-#include "boardwithkb.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+
 
 double *allocate_double_vector (int n) {
   double *x;
@@ -49,21 +54,6 @@ int *allocate_int_vector (int n) {
   return x;
 }
 
-
-void free_vector (void *x)
-{
-  free (x);
-}
-
-int sum_board(int * board, int N) {
-	int sum = 0;
-	int i;
-	for(i = 0; i < N*N; i++) {
-		sum += (board[i] > 0) ? 1 : 0;
-	}
-	return sum;
-}
-
 /* randomly shuffle array of size n */
 /* implements the fisher-yates shuffle */
 void shuffleArr(int * arr, int n) {
@@ -75,22 +65,7 @@ void shuffleArr(int * arr, int n) {
 	}
 }
 
-/*
-int posIsValid(int pos, int l_size, int dir, int orient, int N, int * k) {
-	int y, sq;
-	
-	for(y = 0; y < l_size; y++) { 
-		sq = (orient == 10) ? (pos + (-1*N*dir*y)) : (pos + dir*y);
-		
-		if((sq < 0) || (sq > ((N*N)-1))) { return 0; } // off board
-		if( k[sq] > 0 ) { return 0; } // if used already or a miss
-		if( (orient == 1) && ((((int)pos)/10) != (((int)sq)/10)) ) { // sideways and next sq off row
-			return 0;
-		}
-	}
-	return 1;
-}
-*/
+
 int posIsValid(int pos, int l_size, int dir, int orient, int N, int * used) {
 	int y, sq;
 	for(y = 0; y < l_size; y++) { 
@@ -107,9 +82,7 @@ int posIsValid(int pos, int l_size, int dir, int orient, int N, int * used) {
  * 				int N = dimension of the board (default 10)
  *				int n = # boards to generate
  */
-void generateBoard(double * ships, int N, int n, int np) {
-	printf("Generating %d boards \n",n);
-	
+void generateBoard(double * ships, int N, int n) {
 	int * sizes = allocate_int_vector(5);
 	sizes[0] = 2; sizes[1] = 3; sizes[2] = 3;	sizes[3] = 4; sizes[4] = 5; 
 	
@@ -117,8 +90,8 @@ void generateBoard(double * ships, int N, int n, int np) {
 	used = allocate_int_vector(N*N);
 	int i, z, y, w, sq, dir, orient, l_size, pos, u,yy;
 	int valid;
-	double avgfactor = (1.0/(n*np));
-  srand(time(NULL));
+	double avgfactor = (1.0/n);
+  	srand(time(NULL));
 
 		for(i = 0; i < n; i++) {			
 		/* place 5 ships */
@@ -151,12 +124,9 @@ void generateBoard(double * ships, int N, int n, int np) {
 		} printf("\n");
 		memset(used,0,N*N*sizeof(int));
 	}
-	printf("DONE generating %d boards \n",n);
-	
 	free(used);
 	free(sizes);
 }
-
 
 /*
  * 	int[] k = information known about the board
@@ -184,10 +154,8 @@ int posIsValidK(int pos, int l_size, int dir, int orient, int N, int * used, int
  * 				int[] k = information known about the board
  *   k[i] = {-1:unknown, 0:miss, 1:hit, 2-5 ships}
  */
-void generateBoardWithK(double * shipProbK, int N, int n, int * k, int np) {
+void generateBoardWithK(double * shipProbK, int N, int n, int * k) {
 
-	printf("Generating %d k-boards \n",n);
-	
 	int * used;
 	used = allocate_int_vector(N*N);
 	int * used_known;
@@ -196,8 +164,8 @@ void generateBoardWithK(double * shipProbK, int N, int n, int * k, int np) {
 	int MAX_SHIP = 5;
 	int shps = 5;
 	int valid;
-	double avgfactor = (1.0/(n*np));
-  srand(time(NULL));
+	double avgfactor = (1.0/n);
+  	srand(time(NULL));
 
 
 	int q, hts;
@@ -278,13 +246,10 @@ void generateBoardWithK(double * shipProbK, int N, int n, int * k, int np) {
 		memset(used,0,N*N*sizeof(int));
 		
 	}
-	printf("DONE generating %d k-boards \n",n);
-	
 	free(used_known);
 	free(used);
 	free(sizes);
 }
-
 
 /*
  * k is a vector that holds a board state on it
@@ -313,55 +278,72 @@ void generateIncompleteBoard(int * k, int N) {
 	}
 }
 
-void genPlayerBoard(int * board, int N, int * ships) {
+int main() {
+	int nships = 4;
+	int N = 10; /* board dimension ,size=N*N */
+
+
+	double * ships;
+	ships = allocate_double_vector(N*N*nships); /* keep track of ship probs */
+	memset(ships, 0, N*N*nships);
+	int n = 10000; //1000; /* number of boards to be generated */
+	int u, v;
+	double sum;
+	int i;
 	
-	int * sizes = allocate_int_vector(5);
-	sizes[0] = 2; sizes[1] = 3; sizes[2] = 3;	sizes[3] = 4; sizes[4] = 5; 
-  srand(time(NULL));
-	
-	int z, y, w, sq, dir, orient, l_size, pos, u,yy,qq;
-	int valid;
-	int cur = 0;
-	/* place 5 ships */
-	shuffleArr(sizes, 5); 
-	for(z = 0; z < 5; z++) {
-		valid = 0;
-		/* select size */
-		l_size = sizes[z];
-		/* ==> take random direction */
-		dir = pow(-1, rand());
-		orient = (rand() % 2) ? 1 : 10 ; /* 1 csp to left/right, 10 to up/down */
-		/* select position on board */
-		/* string together ternary operator for bounds checking */
-		while(!valid) {
-					pos = (orient==1)  ? ((dir>0) ? (rand() % (N-l_size+1))*(rand() % N)  : (((l_size-1)+(rand() % (N-l_size+1)))*(rand() % N))) : ((dir>0) ? ((N*(l_size-1)) + (rand() % ((N*N)-(N*(l_size-1))))) : (rand() % (N*N-(N*l_size-1)))); 
-			
-			valid = posIsValid(pos, l_size, dir, orient, N, board);
-		} 
-			
-		/* debugging - should be valid now */
-		printf("BOARD size = %d orient = %d dir = %d pos = %d \n\n",l_size,orient,dir,pos);
-		
-		for(w = 0; w < l_size; w++) { 
-			sq = (orient == 10) ? (pos + (N*-1*dir*w)) :  (pos + (dir*w));
-			board[sq] = l_size;
-			ships[cur + w] = sq;
-			//printf("ship at %d really %d \n", ships[cur + w], sq);
-		}
-		cur += l_size;
-		
+	generateBoard(ships, N, n);
+
+	printf("n = %d \n",n);
+	for(i = 0; i < (N*N*nships); i++) {
+		if(i % nships == 0) { printf("\n"); }
+		printf(" %f ", ships[i]);
 	}
-		
-		/* FOR DEBUGGING: PRINT BOARD */
-		for(yy = 0; yy < N*N; yy++) {
-			if(yy % 10 == 0) printf("\n");
-			printf(" %d ", board[yy]);
-			
-		} printf("\n");
 	
-	free(sizes);
+	for(u = 0; u < nships; u++) { // confirm model adds properly
+		sum = 0;
+		for(v = 0; v < N*N; v++) {
+			sum += (ships[v*nships + u]/(u+2));
+		}
+		printf("\nsum for col %d is %f\n",u,sum);
+	}
 	
 	
+	double * shipProbK;
+	shipProbK = allocate_double_vector(N*N*nships); 
+	memset(shipProbK, 0, N*N*nships);
+
+	int s;
+	int * k;	
+	k = allocate_int_vector(N*N);
+	memset(k,(-1),N*N*sizeof(int));
+
+	generateIncompleteBoard(k, N); 
+	// print the shitty board
+	for( u = 0; u < N*N; u++) {
+		if(u % 10 == 0) printf("\n");
+	} printf("\n");
+	
+	generateBoardWithK(shipProbK, N, n, k);
+	
+	printf("n = %d \n",n);
+	
+	for(i = 0; i < (N*N*nships); i++) {
+		if(i % nships == 0) { printf("\n"); }
+		printf(" %f ", shipProbK[i]);
+	}
+	for(u = 0; u < nships; u++) { // confirm model adds properly
+		sum = 0;
+		for(v = 0; v < N*N; v++) {
+			sum += (shipProbK[v*nships + u]/(u+2));
+				}
+		printf("\nsum for col %d is %f\n",u,sum);
+	}
+
+	free(shipProbK);
+	free(k);	
+	free(ships);
 	
 	
 }
+
+
